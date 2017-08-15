@@ -1,12 +1,16 @@
 # Status checker
-State transition testing helper
+State transition testing helper<br>
+Use config (<a href="/examples/">examples</a>), run as command or run as django-command.<br>
+
 
 **Installation**
 ```
 pip install git+https://github.com/pefremova/stchecklly.git 
 ```
 
-Use config (<a href="/examples/">examples</a>), run as command.<br>
+For Django:<br>
+add 'stchecklly' to INSTALLED_APPS for use as django-command (by manage.py state_checker)
+
 
 **Features**
 * generate list of available transitions with given length
