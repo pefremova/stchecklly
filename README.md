@@ -1,6 +1,6 @@
 # Status checker
 State transition testing helper<br>
-Use config (<a href="/examples/">examples</a>), run as command or run as django-command.<br>
+Use config (<a href="/example/">examples</a>), run as command or run as django-command.<br>
 
 
 **Installation**
