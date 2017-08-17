@@ -1,4 +1,5 @@
 from copy import copy
+import csv
 import importlib
 import os
 import sys
@@ -44,6 +45,33 @@ def load_config(path):
     filename = os.path.splitext(os.path.basename(path))[0]
     sys.path.append(os.path.dirname(os.path.expanduser(path)))
     return importlib.import_module(filename)
+
+
+def load_from_csv(path):
+    result = []
+    with open(path, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+        result = []
+        for row in reader:
+            result.append(row)
+    state_column_count = 2 if result[0][1] == '' else 1
+    action_row_count = 1
+    raw_actions = result[0][state_column_count:]
+    if result[1][0] == '':
+        raw_actions = zip(raw_actions, result[1][state_column_count:])
+        action_row_count = 2
+    actions = [Action(*el) for el in raw_actions]
+
+    states = []
+    state_map = {}
+    for row in result[action_row_count:]:
+        state = State(*row[:state_column_count])
+        states.append(state)
+        state_map[state.name] = state
+    ACTIONS = {}
+    for n, row in enumerate(result[action_row_count:]):
+        ACTIONS[states[n]] = {actions[j]: state_map[el] for j, el in enumerate(row[state_column_count:]) if el != '-'}
+    return ACTIONS, state_map
 
 
 def prepare_actions(actions):

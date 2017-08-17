@@ -3,19 +3,21 @@ from copy import copy
 
 class State(object):
     name = ''
+    human_name = ''
 
-    def __init__(self, value):
+    def __init__(self, value, human_name=''):
         if value is None:
             self.name = 'None'
         elif isinstance(value, str):
             self.name = value
+        self.human_name = human_name
         super().__init__()
 
     def check(self, data):
         pass
 
     def get_text(self):
-        return self.name
+        return self.human_name or self.name
 
     def __repr__(self, *args, **kwargs):
         return self.get_text()
