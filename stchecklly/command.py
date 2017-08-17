@@ -1,7 +1,8 @@
 import argparse
+from copy import deepcopy
 
 from stchecklly.actions import generate_lists, load_config, prepare_actions, view_schema, load_from_csv
-from stchecklly.models import Pipeline
+from stchecklly.models import Pipeline, State
 
 
 def add_arguments(parser):
@@ -16,20 +17,23 @@ def add_arguments(parser):
     parser.add_argument('-t', '--test', dest='test', action='store_true',
                         help='Run check')
     parser.add_argument('-C', '--only-count', dest='only_count', action='store_true',
-                        help='Show only count ')
+                        help='Show only count')
+    parser.add_argument('--stats', dest='show_stats', action='store_true',
+                        help='Show count statistic')
 
 
 def _main(**kwargs):
     if not kwargs.get('config_path') and not kwargs.get('csv_path'):
         exit('one of config_path or csv_path are required')
-    if kwargs.get('csv_path'):
-        ACTIONS, state_map = load_from_csv(kwargs.get('csv_path'))
+    config = None
     if kwargs.get('config_path'):
         config = load_config(kwargs.get('config_path'))
         if not kwargs.get('csv_path'):
             ACTIONS, state_map, action_map = prepare_actions(config.ACTIONS)
+    if kwargs.get('csv_path'):
+        ACTIONS, state_map = load_from_csv(kwargs.get('csv_path'), config)
 
-    START_STATE = state_map[config.START_STATE]
+    START_STATE = config.START_STATE if isinstance(config.START_STATE, State) else state_map[config.START_STATE]
 
     if kwargs.get('show'):
         try:
@@ -41,12 +45,18 @@ def _main(**kwargs):
     lists = generate_lists(ACTIONS, start_state=START_STATE,
                            max_length=kwargs.get('max_length'), max_repeat=kwargs.get('max_repeat'))
     print('Count of lists: %s' % len(lists))
+    if kwargs.get('show_stats'):
+        d = {i: 0 for i in range(2, kwargs.get('max_length') + 1)}
+        for l in lists:
+            d[len(l)] += 1
+        print('\n'.join([':\t'.join([str(k), str(v)]) for k, v in d.items()]))
     if kwargs.get('only_count'):
         exit()
     for l in lists:
         print(l)
         if kwargs.get('verbose') > 1 or kwargs.get('test'):
-            pipeline = Pipeline(ACTIONS, l, START_STATE, None)
+            data = deepcopy(getattr(config, 'DATA', None))
+            pipeline = Pipeline(ACTIONS, l, START_STATE, data)
         if kwargs.get('verbose') > 1:
             print(pipeline.get_text())
         if kwargs.get('test'):

@@ -47,11 +47,10 @@ def load_config(path):
     return importlib.import_module(filename)
 
 
-def load_from_csv(path):
+def load_from_csv(path, config=None):
     result = []
     with open(path, 'r') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
-        result = []
         for row in reader:
             result.append(row)
     state_column_count = 2 if result[0][1] == '' else 1
@@ -60,14 +59,15 @@ def load_from_csv(path):
     if result[1][0] == '':
         raw_actions = zip(raw_actions, result[1][state_column_count:])
         action_row_count = 2
-    actions = [Action(*el) for el in raw_actions]
+    actions = [getattr(config, el[0], None) or Action(*el) for el in raw_actions]
 
     states = []
     state_map = {}
     for row in result[action_row_count:]:
-        state = State(*row[:state_column_count])
+        el = row[:state_column_count]
+        state = getattr(config, el[0], None) or State(*el)
         states.append(state)
-        state_map[state.name] = state
+        state_map[el[0]] = state
     ACTIONS = {}
     for n, row in enumerate(result[action_row_count:]):
         ACTIONS[states[n]] = {actions[j]: state_map[el] for j, el in enumerate(row[state_column_count:]) if el != '-'}

@@ -5,13 +5,12 @@ class State(object):
     name = ''
     human_name = ''
 
-    def __init__(self, value, human_name=''):
-        if value is None:
-            self.name = 'None'
-        elif isinstance(value, str):
-            self.name = value
-        self.human_name = human_name
+    def __init__(self, name='', human_name='', check=None):
         super().__init__()
+        self.name = self.name or name
+        self.human_name = self.human_name or human_name
+        if check:
+            self.check = check
 
     def check(self, data):
         pass
@@ -25,20 +24,20 @@ class State(object):
 
 class Action(object):
     name = ''
+    human_name = ''
 
-    def __init__(self, value, name=None):
-        if isinstance(value, str):
-            self.name = name or value
-        elif callable(value):
-            self.do = value
-            self.name = name or value.__name__
+    def __init__(self, name='', action=None, human_name=''):
         super().__init__()
+        if action:
+            self.do = action
+        self.name = self.name or name or self.do.__name__
+        self.human_name = self.human_name or human_name
 
     def do(self, data):
         pass
 
     def get_text(self):
-        return self.name
+        return self.human_name or self.name
 
     def __repr__(self, *args, **kwargs):
         return self.get_text()
