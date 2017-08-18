@@ -1,4 +1,6 @@
 from copy import copy
+import sys
+import traceback
 
 
 class State(object):
@@ -61,10 +63,25 @@ class Pipeline(object):
         self.current_state = self.get_next_state(self.current_state, action)
 
     def run(self):
-        for action in self.actions_list:
-            action.do(self.data)
-            self.set_next_state(action)
-            self.current_state.check(self.data)
+        text = '\nState: {}'.format(self.current_state.get_text())
+        error_text = ''
+        try:
+            for action in self.actions_list:
+                text += '\nDo: {} ... '.format(action.get_text())
+                action.do(self.data)
+                text += 'OK'
+                self.set_next_state(action)
+                text += '\nState: {} ... '.format(self.current_state.get_text())
+                self.current_state.check(self.data)
+                text += 'OK'
+        except Exception as e:
+            etype, value, tb = sys.exc_info()
+            if any([etype, value, tb]):
+                error_text = ''.join([str(el) for el in traceback.format_exception(etype, value, tb)])
+
+        if error_text:
+            text += '\n' + error_text
+            raise Exception(text)
 
     def get_text(self):
         result = '*' * 20
