@@ -7,6 +7,7 @@ from stchecklly.models import Pipeline, State
 
 def add_arguments(parser):
     parser.add_argument('-c', '--config', dest='config_path', help='Path to config file')
+    parser.add_argument('--config.start', dest='config_start_state', help='Name of start state')
     parser.add_argument('-f', '--csv-file', dest='csv_path', help='Path to csv with config')
     parser.add_argument('-s', dest='show', action='store_true', help='Show graph (need graphviz installed)')
     parser.add_argument('-V', dest='verbose', type=int, default=1, help='Verbosity level (default=1)')
@@ -23,8 +24,8 @@ def add_arguments(parser):
 
 
 def _main(**kwargs):
-    if not kwargs.get('config_path') and not kwargs.get('csv_path'):
-        exit('one of config_path or csv_path are required')
+    if not (kwargs.get('config_path') or kwargs.get('config_start_state')) and not kwargs.get('csv_path'):
+        exit('one of (config_path or config_start_state) or csv_path are required')
     config = None
     if kwargs.get('config_path'):
         config = load_config(kwargs.get('config_path'))
@@ -33,7 +34,8 @@ def _main(**kwargs):
     if kwargs.get('csv_path'):
         ACTIONS, state_map = load_from_csv(kwargs.get('csv_path'), config)
 
-    START_STATE = config.START_STATE if isinstance(config.START_STATE, State) else state_map[config.START_STATE]
+    start_state = kwargs.get('config_start_state') or getattr(config, 'START_STATE', None)
+    START_STATE = start_state if isinstance(start_state, State) else state_map[start_state]
 
     if kwargs.get('show'):
         try:
@@ -46,7 +48,7 @@ def _main(**kwargs):
                            max_length=kwargs.get('max_length'), max_repeat=kwargs.get('max_repeat'))
     print('Count of lists: %s' % len(lists))
     if kwargs.get('show_stats'):
-        d = {i: 0 for i in range(2, kwargs.get('max_length') + 1)}
+        d = {i: 0 for i in range(1, kwargs.get('max_length') + 1)}
         for l in lists:
             d[len(l)] += 1
         print('\n'.join([':\t'.join([str(k), str(v)]) for k, v in d.items()]))
