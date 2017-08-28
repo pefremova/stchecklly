@@ -3,7 +3,7 @@ from distutils.core import setup
 from setuptools import find_packages
 
 setup(name='stchecklly',
-      version='0.0.7',
+      version='0.0.8',
       description="Tool for generate and test statement transitions lists",
       include_package_data=True,
       packages=find_packages(exclude=['example', ]),

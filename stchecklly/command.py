@@ -21,6 +21,7 @@ def add_arguments(parser):
                         help='Show only count')
     parser.add_argument('--stats', dest='show_stats', action='store_true',
                         help='Show count statistic')
+    parser.add_argument('--way', dest='test_way', help='Actions list for test\nExample: "action1 -> action2"')
 
 
 def _main(**kwargs):
@@ -44,16 +45,19 @@ def _main(**kwargs):
             exit()
         except ImportError:
             exit('Need graphviz installed')
-    lists = generate_lists(ACTIONS, start_state=START_STATE,
-                           max_length=kwargs.get('max_length'), max_repeat=kwargs.get('max_repeat'))
-    print('Count of lists: %s' % len(lists))
-    if kwargs.get('show_stats'):
-        d = {i: 0 for i in range(1, kwargs.get('max_length') + 1)}
-        for l in lists:
-            d[len(l)] += 1
-        print('\n'.join([':\t'.join([str(k), str(v)]) for k, v in d.items()]))
-    if kwargs.get('only_count'):
-        exit()
+    if kwargs.get('test_way'):
+        lists = [[getattr(config, name.strip()) for name in kwargs.get('test_way').split('->')], ]
+    else:
+        lists = generate_lists(ACTIONS, start_state=START_STATE,
+                               max_length=kwargs.get('max_length'), max_repeat=kwargs.get('max_repeat'))
+        print('Count of lists: %s' % len(lists))
+        if kwargs.get('show_stats'):
+            d = {i: 0 for i in range(1, kwargs.get('max_length') + 1)}
+            for l in lists:
+                d[len(l)] += 1
+            print('\n'.join([':\t'.join([str(k), str(v)]) for k, v in d.items()]))
+        if kwargs.get('only_count'):
+            exit()
     for l in lists:
         print(l)
         if kwargs.get('verbose') > 1 or kwargs.get('test'):
