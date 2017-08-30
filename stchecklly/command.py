@@ -1,7 +1,7 @@
 import argparse
 from copy import deepcopy
 
-from stchecklly.actions import generate_lists, load_config, prepare_actions, view_schema, load_from_csv
+from stchecklly.actions import generate_lists, load_config, prepare_actions, view_schema, load_from_csv, get_way
 from stchecklly.models import Pipeline, State
 
 
@@ -22,6 +22,7 @@ def add_arguments(parser):
     parser.add_argument('--stats', dest='show_stats', action='store_true',
                         help='Show count statistic')
     parser.add_argument('--way', dest='test_way', help='Actions list for test\nExample: "action1 -> action2"')
+    parser.add_argument('-W', '--get-way', dest='get_way', help='Get way from state1 to state2\nExample: "state1 -> state2"')
 
 
 def _main(**kwargs):
@@ -35,6 +36,14 @@ def _main(**kwargs):
     if kwargs.get('csv_path'):
         ACTIONS, state_map = load_from_csv(kwargs.get('csv_path'), config)
 
+    if kwargs.get('get_way'):
+        states = [el.strip() for el in kwargs.get('get_way').split('->')]
+        state1, state2 = states
+        way = get_way(ACTIONS, state_map[state1], state_map[state2])
+        print('\n'.join([way_el.get_text() for way_el in way]))
+        print(' -> '.join([way_el.name for way_el in way]))
+        exit()
+
     start_state = kwargs.get('config_start_state') or getattr(config, 'START_STATE', None)
     START_STATE = start_state if isinstance(start_state, State) else state_map[start_state]
 
@@ -45,6 +54,7 @@ def _main(**kwargs):
             exit()
         except ImportError:
             exit('Need graphviz installed')
+
     if kwargs.get('test_way'):
         lists = [[getattr(config, name.strip()) for name in kwargs.get('test_way').split('->')], ]
     else:

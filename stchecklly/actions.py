@@ -104,3 +104,33 @@ def view_schema(d):
         for edge, k2 in v.items():
             diagramm.edge(k, k2, label=str(edge))
     diagramm.view()
+
+
+def find_shortest_path(actions, start, end, path=[]):
+    graph = {k: v.keys() for k, v in actions.items()}
+    path = path + [start]
+    if start == end:
+        return path
+    if not start in graph.keys():
+        return None
+    shortest = None
+    for node in graph[start]:
+        newpath = None
+        if node not in path:
+            newpath = find_shortest_path(actions, node, end, path)
+        if newpath:
+            if not shortest or len(newpath) < len(shortest):
+                shortest = newpath
+    return shortest
+
+
+def get_way(ACTIONS, start_state, end_state):
+    actions = {state: {v: k for k, v in el.items()} for state, el in ACTIONS.items()}
+    path = find_shortest_path(actions, start_state, end_state)
+    if not path:
+        return []
+    way = []
+    for n, el in enumerate(path[1:]):
+        el_dict = actions[path[n]]
+        way.append(el_dict[el])
+    return way
