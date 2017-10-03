@@ -134,3 +134,14 @@ def get_way(ACTIONS, start_state, end_state):
         el_dict = actions[path[n]]
         way.append(el_dict[el])
     return way
+
+
+def get_wrong_transitions(actions, exclude_states=None, exclude_actions=None):
+    all_actions = set(sum([list(el.keys()) for el in actions.values()], [])).difference(exclude_actions or ())
+    all_states = set(actions.keys()).difference(exclude_states or ())
+
+    res = []
+    for state in all_states:
+        for action in set(all_actions).difference(actions[state].keys()):
+            res.append((state, action))
+    return res

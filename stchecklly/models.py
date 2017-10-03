@@ -14,6 +14,9 @@ class State(object):
         if check:
             self.check = check
 
+    def get_states(self):
+        pass
+
     def check(self, data):
         pass
 
