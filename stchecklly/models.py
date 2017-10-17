@@ -9,7 +9,7 @@ class State(object):
 
     def __init__(self, name='', human_name='', check=None):
         super().__init__()
-        self.name = name or self.name
+        self.name = name or self.name or self.__class__.__name__
         self.human_name = human_name or self.human_name
         if check:
             self.check = check
@@ -35,7 +35,7 @@ class Action(object):
         super().__init__()
         if action:
             self.do = action
-        self.name = name or self.name or self.do.__name__
+        self.name = name or self.name or (self.action and self.action.__name__) or ''
         self.human_name = human_name or self.human_name
 
     def do(self, data):
