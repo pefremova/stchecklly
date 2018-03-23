@@ -1,7 +1,8 @@
 import argparse
 from copy import deepcopy
 
-from stchecklly.actions import generate_lists, load_config, prepare_actions, view_schema, load_from_csv, get_way
+from stchecklly.actions import (generate_lists, load_config, prepare_actions, view_schema, load_from_csv,
+                                get_way, get_not_affect_state_actions)
 from stchecklly.models import Pipeline, State
 
 
@@ -21,8 +22,11 @@ def add_arguments(parser):
                         help='Show only count')
     parser.add_argument('--stats', dest='show_stats', action='store_true',
                         help='Show count statistic')
+    parser.add_argument('-M', dest='only_max', action='store_true', help='Save only max length transitions lists')
+    parser.add_argument('--only-length', dest='only_length', type=int, help='Save transitions lists only with this length')
     parser.add_argument('--way', dest='test_way', help='Actions list for test\nExample: "action1 -> action2"')
     parser.add_argument('-W', '--get-way', dest='get_way', help='Get way from state1 to state2\nExample: "state1 -> state2"')
+    parser.add_argument('--not-affect', dest='find_not_affect', action='store_true', help='Find actions, that not change any state')
 
 
 def _main(**kwargs):
@@ -35,7 +39,6 @@ def _main(**kwargs):
             ACTIONS, state_map, action_map = prepare_actions(config.ACTIONS)
     if kwargs.get('csv_path'):
         ACTIONS, state_map = load_from_csv(kwargs.get('csv_path'), config)
-
     if kwargs.get('get_way'):
         states = [el.strip() for el in kwargs.get('get_way').split('->')]
         state1, state2 = states
@@ -57,9 +60,15 @@ def _main(**kwargs):
 
     if kwargs.get('test_way'):
         lists = [[getattr(config, name.strip()) for name in kwargs.get('test_way').split('->')], ]
+    elif kwargs.get('find_not_affect'):
+        print('This actions not change any state to other:')
+        print('\n'.join([str(el) for el in get_not_affect_state_actions(ACTIONS)]))
+        exit()
     else:
         lists = generate_lists(ACTIONS, start_state=START_STATE,
-                               max_length=kwargs.get('max_length'), max_repeat=kwargs.get('max_repeat'))
+                               max_length=kwargs.get('max_length'), max_repeat=kwargs.get('max_repeat'),
+                               current_max_length=0 if kwargs.get('only_max') else None,
+                               only_length=kwargs.get('only_length'))
         print('Count of lists: %s' % len(lists))
         if kwargs.get('show_stats'):
             d = {i: 0 for i in range(1, kwargs.get('max_length') + 1)}

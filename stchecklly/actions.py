@@ -7,10 +7,12 @@ import sys
 from stchecklly.models import State, Action
 
 
-def _generate_lists(actions, start_state, previous_steps, max_l, max_repeat):
+def _generate_lists(actions, start_state, previous_steps, max_l, max_repeat, current_max_length=None, only_length=None):
     is_latest = False
     if previous_steps is None:
         previous_steps = []
+    if current_max_length is not None and only_length is None:
+        current_max_length = max(current_max_length, len(previous_steps))
     result = []
     current_state_actions = copy(actions.get(start_state, {}))
     keys_for_remove = []
@@ -22,22 +24,45 @@ def _generate_lists(actions, start_state, previous_steps, max_l, max_repeat):
         current_state_actions.pop(el, None)
     if not current_state_actions:
         """no any available actions from this state"""
-        return [previous_steps, ], True
+        if only_length:
+            return [] if len(previous_steps) != only_length else [previous_steps, ], True
+        return [] if current_max_length and len(previous_steps) < current_max_length else [previous_steps, ], True
     for v, new_ in current_state_actions.items():
         is_latest = False
         _result = [previous_steps + [v], ]
         if len(_result[0]) < max_l and not is_latest:
-            _result, is_latest = _generate_lists(actions, new_, _result[0], max_l, max_repeat)
+            _result, is_latest = _generate_lists(actions, new_, _result[0], max_l, max_repeat,
+                                                 current_max_length=current_max_length, only_length=only_length)
+            if only_length and _result:
+                _result = filter(lambda el: len(el) == only_length, _result)
+        elif only_length:
+            _result = filter(lambda el: len(el) == only_length, _result)
+
+        if current_max_length is not None:
+            _current_max_length = len(max(_result + ['', ], key=len))
+            if _current_max_length < current_max_length:
+                continue
+            elif _current_max_length > current_max_length:
+                current_max_length = _current_max_length
+                result = []
+        if only_length and is_latest:
+            _result = filter(lambda el: len(el) == only_length, _result)
+
         result.extend(_result)
+
+    if current_max_length:
+        result = list(filter(lambda el: len(el) >= current_max_length, result))
     return result, False
 
 
-def generate_lists(actions, start_state, max_length=3, max_repeat=2):
+def generate_lists(actions, start_state, max_length=3, max_repeat=2, current_max_length=None, only_length=None):
     result, _ = _generate_lists(actions=actions,
                                 start_state=start_state,
                                 previous_steps=None,
                                 max_l=max_length,
-                                max_repeat=max_repeat)
+                                max_repeat=max_repeat,
+                                current_max_length=current_max_length,
+                                only_length=only_length)
     return result
 
 
@@ -145,3 +170,15 @@ def get_wrong_transitions(actions, exclude_states=None, exclude_actions=None):
         for action in set(all_actions).difference(actions[state].keys()):
             res.append((state, action))
     return res
+
+
+def get_not_affect_state_actions(actions):
+    actions_that_change = set()
+    all_actions = set()
+    for state, values in actions.items():
+        for action, new_state in values.items():
+            all_actions.add(action)
+            if new_state != state:
+                actions_that_change.add(action)
+
+    return all_actions.difference(actions_that_change)
