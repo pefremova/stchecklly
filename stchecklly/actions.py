@@ -5,6 +5,7 @@ import os
 import sys
 
 from stchecklly.models import State, Action
+from random import choice, sample
 
 
 def _generate_lists(actions, start_state, previous_steps, max_l, max_repeat, current_max_length=None, only_length=None):
@@ -172,6 +173,18 @@ def get_wrong_transitions(actions, exclude_states=None, exclude_actions=None):
     return res
 
 
+def get_correct_transitions(actions, exclude_states=None, exclude_actions=None):
+    res = []
+    for state, values in actions.items():
+        if state in (exclude_states or ()):
+            continue
+        for action, new_state in values.items():
+            if action in (exclude_actions or ()):
+                continue
+            res.append((state, action, new_state))
+    return res
+
+
 def get_not_affect_state_actions(actions):
     actions_that_change = set()
     all_actions = set()
@@ -182,3 +195,52 @@ def get_not_affect_state_actions(actions):
                 actions_that_change.add(action)
 
     return all_actions.difference(actions_that_change)
+
+
+def get_random_obj_in_state(ACTIONS, state, data, **kwargs):
+    was_in = kwargs.pop('was_in', set())
+
+    def get_obj_directly(state):
+        objs = state.get_states(**kwargs)
+        if objs:
+            return choice(objs)
+        if objs is None:
+            return
+        return []
+    obj = get_obj_directly(state)
+    if obj or obj is None:
+        return obj
+
+    previous_states = []
+    for s, v in ACTIONS.items():
+        if s == state or s in was_in:
+            continue
+        for a, ss in v.items():
+            if ss == state:
+                previous_states.append((s, a))
+    for prev_state, to_current_action in sample(previous_states, len(previous_states)):
+        """First try get one of previous state directly"""
+        obj = get_obj_directly(prev_state)
+
+        _data = data.copy()
+        if obj:
+            _data['obj_pk'] = obj.pk
+        if obj or obj is None:
+            to_current_action.do(_data)
+            obj = get_obj_directly(state)
+            if obj or obj is None:
+                return obj
+    for prev_state, to_current_action in sample(previous_states, len(previous_states)):
+        _was_in = was_in.copy()
+        _was_in.add(prev_state)
+        obj = get_random_obj_in_state(ACTIONS, prev_state, data, was_in=_was_in, **kwargs)
+        _data = data.copy()
+        if obj:
+            _data['obj_pk'] = obj.pk
+
+        if obj or obj is None:
+            to_current_action.do(_data)
+            obj = get_obj_directly(state)
+            if obj or obj is None:
+                return obj
+    return []
